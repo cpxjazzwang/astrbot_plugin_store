@@ -1,5 +1,3 @@
-import aiosqlite  # noqa: F401
-
 import astrbot.api.message_components as comp
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
@@ -51,7 +49,13 @@ class MyPlugin(Star):
                 for msg in msgs:
                     if isinstance(msg, comp.Image):
                         local_path = msg.path
-                await self.storedb.insert(user_id, name, location, local_path)  # 将图片信息插入数据库
+                        local_url = msg.url
+
+                        # 打印图片内容的前100字节以验证
+
+                await self.storedb.insert(
+                    user_id, name, location, local_path if local_path is not None else local_url
+                )  # 将图片信息插入数据库
                 new_id = await self.storedb.query_by_id(user_id, name)  # 获取新插入记录的 ID
 
                 await event.send(event.plain_result(f"已存储物品：{name}，id：{new_id}"))
@@ -97,7 +101,11 @@ class MyPlugin(Star):
         else:
             _, _, image_name, photo_path, created_at = record
             response = f"物品名称: {image_name}\n储存时间: {created_at}\n"
-            chain = [comp.At(qq=user_id), comp.Plain(response), comp.Image.fromFileSystem(path=photo_path)]
+            chain = [
+                comp.At(qq=user_id),
+                comp.Plain(response),
+                comp.Image.fromFileSystem(path=photo_path) or comp.Image.fromURL(url=photo_path),
+            ]
             yield event.chain_result(chain)
 
     # noqa: W293
