@@ -1,7 +1,12 @@
+import os
+
+import aiohttp
+
 import astrbot.api.message_components as comp
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
+from astrbot.core.utils.astrbot_path import get_astrbot_plugin_data_path
 from astrbot.core.utils.session_waiter import (
     SessionController,
     session_waiter,
@@ -51,17 +56,26 @@ class MyPlugin(Star):
                     if isinstance(msg, comp.Image):
                         local_path = msg.path
                         local_url = msg.url
+                        if local_url:
+                            save_path = f"/{event.get_sender_id()}_{msg.file}"
+                            save_path = os.path.join(get_astrbot_plugin_data_path(), "plugin_data", save_path)
+                            await self.download_image(local_url, save_path)
 
-                        # 打印图片内容的前100字节以验证
+                            # 打印图片内容的前100字节以验证
 
-                    await self.storedb.insert(
-                        user_id, name, location, local_path if local_path is not None else local_url
-                    )  # 将图片信息插入数据库
-                    new_id = await self.storedb.query_by_id(user_id, name)  # 获取新插入记录的 ID
+                            await self.storedb.insert(user_id, name, location, save_path)  # 将图片信息插入数据库
+                            new_id = await self.storedb.query_by_id(user_id, name)  # 获取新插入记录的 ID
 
-                    await event.send(event.plain_result(f"已存储物品：{name}，id：{new_id}"))
-                    controller.stop()  # 存储完成后停止会话控制器
-                    return
+                            await event.send(event.plain_result(f"已存储物品：{name}，id：{new_id}"))
+                            controller.stop()  # 存储完成后停止会话控制器
+                            return
+                        else:
+                            await self.storedb.insert(user_id, name, location, local_path)  # 将图片信息插入数据库
+                            new_id = await self.storedb.query_by_id(user_id, name)  # 获取新插入记录的 ID
+
+                            await event.send(event.plain_result(f"已存储物品：{name}，id：{new_id}"))
+                            controller.stop()  # 存储完成后停止会话控制器
+                            return
 
         # noqa: W293
 
@@ -73,6 +87,15 @@ class MyPlugin(Star):
             yield event.plain_result("发生错误，请联系管理员: " + str(e))
         finally:
             event.stop_event()
+
+    async def download_image(self, url: str, path: str):
+        """使用 aiohttp 下载图片"""
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    with open(path, "wb") as f:
+                        f.write(await resp.read())
 
     @filter.command("删除")
     async def delete(self, event: AstrMessageEvent, name: str):
@@ -105,7 +128,7 @@ class MyPlugin(Star):
             chain = [
                 comp.At(qq=user_id),
                 comp.Plain(response),
-                comp.Image.fromFileSystem(path=photo_path) or comp.Image.fromURL(url=photo_path),
+                comp.Image.fromFileSystem(path=photo_path),
             ]
             yield event.chain_result(chain)
 
