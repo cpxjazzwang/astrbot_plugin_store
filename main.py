@@ -54,14 +54,14 @@ class MyPlugin(Star):
 
                         # 打印图片内容的前100字节以验证
 
-                await self.storedb.insert(
-                    user_id, name, location, local_path if local_path is not None else local_url
-                )  # 将图片信息插入数据库
-                new_id = await self.storedb.query_by_id(user_id, name)  # 获取新插入记录的 ID
+                    await self.storedb.insert(
+                        user_id, name, location, local_path if local_path is not None else local_url
+                    )  # 将图片信息插入数据库
+                    new_id = await self.storedb.query_by_id(user_id, name)  # 获取新插入记录的 ID
 
-                await event.send(event.plain_result(f"已存储物品：{name}，id：{new_id}"))
-                controller.stop()  # 存储完成后停止会话控制器
-                return
+                    await event.send(event.plain_result(f"已存储物品：{name}，id：{new_id}"))
+                    controller.stop()  # 存储完成后停止会话控制器
+                    return
 
         # noqa: W293
 
