@@ -45,6 +45,7 @@ class MyPlugin(Star):
                 return
             else:
                 msgs = event.message_obj.message  # 下载图片并获取本地路径
+                logger.info(msgs)
                 local_path = None
                 for msg in msgs:
                     if isinstance(msg, comp.Image):
