@@ -96,48 +96,9 @@ class MyPlugin(Star):
             yield event.plain_result("没有找到该物品。")
         else:
             _, _, image_name, photo_path, created_at = record
-            response = f"物品名称: {image_name}\n储存时间: {created_at}\n图片路径: {photo_path}"
-            yield event.plain_result(response)
-
-    # def query_by_user_id(self, user_id):
-    #     self.cursor.execute(
-    #         """
-    #         SELECT id, user_id, image_name, photo_path, created_at FROM store WHERE user_id = ?
-    #     """,
-    #         (user_id,),
-    #     )
-    #     return self.cursor.fetchall()
-
-    # def query_by_id(self, user_id, image_name):
-    #     self.cursor.execute(
-    #         """
-    #         SELECT id, user_id, image_name, photo_path, created_at FROM store WHERE user_id = ? AND image_name = ?
-    #     """,
-    #         (user_id, image_name),
-    #     )
-    #     return self.cursor.fetchone()
-
-    # def delete_photo(self, user_id, image_name):
-    #     self.cursor.execute(
-    #         """
-    #         SELECT id FROM store WHERE user_id = ? AND image_name = ?
-    #     """,
-    #         (user_id, image_name),
-    #     )
-    #     if self.cursor.fetchone() is None:
-    #         logger.warning(
-    #             f"⚠️没有找到记录，无法删除: user_id={user_id}, image_name={image_name}"
-    #         )
-    #         return "❌没有找到记录，无法删除"
-    #     else:
-    #         self.cursor.execute(
-    #             """
-    #             DELETE FROM store WHERE user_id = ? AND image_name = ?
-    #         """,
-    #             (user_id, image_name),
-    #         )
-    #         self.conn.commit()
-    #         return "✅记录已删除"
+            response = f"物品名称: {image_name}\n储存时间: {created_at}\n"
+            chain = [comp.At(qq=user_id), comp.Plain(response), comp.Image.fromFileSystem(path=photo_path)]
+            yield event.chain_result(chain)
 
     # noqa: W293
     async def terminate(self):

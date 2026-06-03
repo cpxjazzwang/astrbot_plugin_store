@@ -5,7 +5,7 @@ import aiosqlite
 from astrbot.api import logger
 from astrbot.core.utils.astrbot_path import get_astrbot_plugin_data_path
 
-DB_PATH = str(Path(get_astrbot_plugin_data_path()) / "astrbot_plugin_store.db")
+DB_PATH = str(Path(get_astrbot_plugin_data_path()) / "plugin_data" / "astrbot_plugin_store.db")
 
 
 class Storedb:
